@@ -4,24 +4,47 @@ const fs = require('fs');
 
 const PORT = 3000;
 const CLIENT_JS_PATH = 'client.js';
-const CLIENT_JS_BODY = fs.readFileSync('./client.js').toString();
+const CLIENT_JS_BODY = fs.readFileSync('./clientForBrowser.js').toString();
 const STATE = {};
 const WAITING = [];
+const WAITING_FOR_KEY = {};
 
 const app = express();
+
+function clock() {
+  return new Date().toTimeString().split(' ')[0];
+}
 
 //function log() {}
 function log() {
   console.log.apply(console, arguments);
 }
 
-function notify() {
-  log('%s about to be notified...', WAITING.length);
+function notifyResps(resps, state) {
   let res;
-  while ((res = WAITING.pop())) {
+  while ((res = resps.pop())) {
     try {
-      res.send(STATE);
+      res.send(state);
     } catch (_) {}
+  }
+}
+
+function notify(key, value) {
+  log('notify!');
+
+  if (WAITING.length > 0) {
+    log('  %s about to be notified (generic)...', WAITING.length);
+    notifyResps(WAITING, STATE);
+  }
+
+  const subResps = WAITING_FOR_KEY[key];
+  if (subResps && subResps.length > 0) {
+    log(
+      '  %s about to be notified (waiting for key %s)...',
+      subResps.length,
+      key
+    );
+    notifyResps(subResps, value);
   }
 }
 
@@ -29,6 +52,8 @@ app.disable('x-powered-by');
 app.set('etag', false);
 
 app.use(function(req, res, next) {
+  log('%s - %s %s', clock(), req.method, req.path);
+
   res.header('Access-Control-Allow-Origin', '*');
   res.header(
     'Access-Control-Allow-Headers',
@@ -55,7 +80,7 @@ app.post('/:key', (req, res) => {
 
   log('setting', key, 'to', value);
   res.send('true');
-  notify();
+  notify(key, value);
 });
 
 app.get(`/${CLIENT_JS_PATH}`, (req, res) => {
@@ -63,9 +88,18 @@ app.get(`/${CLIENT_JS_PATH}`, (req, res) => {
   res.send(CLIENT_JS_BODY);
 });
 
-app.get('/wait', (req, res) => {
-  WAITING.push(res);
-  log('%s waiting...', WAITING.length);
+app.get('/wait/:key?', (req, res) => {
+  const key = req.params.key;
+  if (key) {
+    let o = WAITING_FOR_KEY[key];
+    if (!o) {
+      o = [];
+      WAITING_FOR_KEY[key] = o;
+    }
+    o.push(res);
+  } else {
+    WAITING.push(res);
+  }
 });
 
 app.get('/:key', (req, res) => {

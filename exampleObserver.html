@@ -24,7 +24,8 @@
       window.alert('error occurred');
     }
 
-    L.onChange(onData, onError);
+    const key = location.hash && location.hash.substring(1);
+    L.onChange(onData, onError, key);
   </script>
 
 </body>

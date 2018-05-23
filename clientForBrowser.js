@@ -26,11 +26,15 @@ function logger(host) {
     }).then(resp => resp.json());
   }
 
-  function wait() {
-    return fetch(`${host}/wait`, {}).then(resp => resp.json());
+  function wait(optionalKey) {
+    return fetch(`${host}/wait${optionalKey ? '/' + optionalKey : ''}`, {
+      headers: {
+        [HEADER_ACCEPT]: MIME_JSON
+      }
+    }).then(resp => resp.json());
   }
 
-  function onChange(dataCb, errorCb) {
+  function onChange(dataCb, errorCb, optionalKey) {
     get()
       .then(o => dataCb(o))
       .catch(() => {});
@@ -43,7 +47,7 @@ function logger(host) {
         }
       }
 
-      wait()
+      wait(optionalKey)
         .then(o => dataCb(o))
         .then(() => step())
         .catch(() => step(true));
