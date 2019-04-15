@@ -15,10 +15,8 @@ function clock() {
   return new Date().toTimeString().split(' ')[0];
 }
 
-//function log() {}
-function log() {
-  console.log.apply(console, arguments);
-}
+function log() {}
+// function log() { console.log.apply(console, arguments); }
 
 function notifyResps(resps, state) {
   let res;
@@ -30,7 +28,7 @@ function notifyResps(resps, state) {
 }
 
 function notify(key, value) {
-  log('notify!');
+  //log('notify!');
 
   if (WAITING.length > 0) {
     log('  %s about to be notified (generic)...', WAITING.length);
@@ -62,7 +60,7 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use(bodyParser.json({ strict: false }));
+app.use(bodyParser.json({ strict: false, limit: '50mb', extended: true }));
 
 app.post('/:key', (req, res) => {
   const key = req.params.key;
@@ -88,18 +86,8 @@ app.get(`/${CLIENT_JS_PATH}`, (req, res) => {
   res.send(CLIENT_JS_BODY);
 });
 
-app.get('/wait/:key?', (req, res) => {
-  const key = req.params.key;
-  if (key) {
-    let o = WAITING_FOR_KEY[key];
-    if (!o) {
-      o = [];
-      WAITING_FOR_KEY[key] = o;
-    }
-    o.push(res);
-  } else {
-    WAITING.push(res);
-  }
+app.get('/_keys_', (req, res) => {
+  res.send(Object.keys(STATE));
 });
 
 app.get('/:key', (req, res) => {

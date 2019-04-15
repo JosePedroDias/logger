@@ -21,20 +21,9 @@ import the client via script tag or module.
 ```javascript
 const L = logger('http://127.0.0.1:3000');
 
-L.set(k, v);
+L.set(k, v).then(noop);
 
-L.get(k); // promise to JSON value for k
+L.get(k).then((o) => console.log(o));
 
-L.onChange(onDataCb(), onError(), optionalKey); // every time the store changes, onDataCb is fired. onError is fired after 10 unsuccessful polls will only fire for optionalKey changes if argument is supplied
+L.onChange(onDataCb, onErrorCb, optionalKey);
 ```
-
-## example usage
-
-You can test the usage locally by:
-
-    python -m SimpleHTTPServer 2244
-
-and visiting the example pages
-
-the `exampleObserver.html` can filter the wait on a key if you pass it a hash in the URL, like this:
-<http://127.0.0.1:2244/exampleObserver.html#keygoeshere>
